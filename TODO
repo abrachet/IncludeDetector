@@ -1,0 +1,21 @@
+Lexer TODO:
+    create a vector for currently known types
+        typedef and class/enum/struct will add to these types
+    parse includes to know when to export symbols versus add types to type vector
+
+    create a lexer for source files which searches for all symbols that aren't known symbols
+        for source files, parse the include files to know whcih files are 
+
+    update all functions which call export to call the new export, not the old one
+
+    rework on typedef function, template and namespace (and also using)
+
+Symtable:
+    add a mutex for writes to the sym table (no need for reads)
+
+    sym_file.c's get_sym_file_path is currently just returning "symfile"
+        need to make find a suitable location for the file, as well as refinding where it put it
+
+
+Argument Handling:
+    needs a lot of revamping...

@@ -1,0 +1,21 @@
+# Alex Brachet-Mialot <abrachet@purdue.edu>
+.vscode/
+a.out.dSYM/
+current_test.dSYM/
+deprecated/
+
+# fake header file
+_test.h
+
+# compiled executables
+a.out
+current_test
+export_test
+
+symfile
+
+*.gch
+*.o
+*.s
+*.S
+*.so

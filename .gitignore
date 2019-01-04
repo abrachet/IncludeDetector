@@ -7,6 +7,8 @@ deprecated/
 # fake header file
 _test.h
 
+.DS_Store
+
 # compiled executables
 a.out
 current_test

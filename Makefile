@@ -1,13 +1,14 @@
 TARGET = ID_test
 WARNING = -Wall -Wshadow --pedantic -Wvla -Werror
 OPTIMIZATIONS = -O0
-GCC = gcc -g -std=c99 $(OPTIMIZATIONS) $(WARNING) -I./
+LIBRARIES = #-lc -lpthread
+GCC = gcc -g -std=c99 $(OPTIMIZATIONS) $(WARNING) $(LIBRARIES) -I./
 DEFINES = -DDEBUG
 
-SRCS = Parsing/Scanner.c Parsering/keywords.c Parsing/TokenStream.c \
-	   Export/export.c Export/sym_file.c Export/find_symbol.c \
+SRCS = Parsing/Scanner.c Parsing/keywords.c Parsing/TokenStream.c \
+	   Export/export.c Export/sym_file.c Export/find_symbol.c Parsing/_parse_source.c \
 	   Parsing/_parse_header.c Parsing/Parser.c arg_parser.c single_threaded_conductor.c \
-	   main.c
+	   ID.c main.c
 
 OBJS = $(SRCS:%.c=%.o)
 

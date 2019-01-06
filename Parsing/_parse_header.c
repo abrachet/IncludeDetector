@@ -14,7 +14,8 @@
  */ 
 
 #include "Parser.h"
-#include "Export/export.h"
+#include <Export/export.h>
+#include <Export/sym_file.h> // for struct se_list
 #include "Scanner.h"
 
 #include <unistd.h>
@@ -36,7 +37,6 @@ static bool generic(struct current_token*, export_t);
 
 static struct lexer_t map[] = {
     Lexer_t(is_template, template_),            //LexFuncs::Template
-    Lexer_t(is_type, type_name),                //LexFuncs::TypeName
     Lexer_t(is_type_specifier, type_specifier), //etc...
     Lexer_t(is_attribute, attribute),
     Lexer_t(is_typedef, type_def),
@@ -44,6 +44,8 @@ static struct lexer_t map[] = {
     Lexer_t(always_true, symbol),
     Lexer_t(is_preprocessor, preprocessor),
 
+    // its .in function is different
+    //Lexer_t(is_type, type_name),                //LexFuncs::TypeName
 };
 
 #define MAP_SIZE (sizeof(map) / sizeof(*map))
@@ -57,11 +59,17 @@ find(enum LexFuncs lf)
 }
 
 
+
 #define expect(enum, ct, et)                        \
     do {                                            \
-        struct lexer_t lt = find(enum);             \
-        if (lt.in( tk_get_str(ct_get_token(ct))))   \
-            return lt.call(ct, et);                 \
+        if (enum == TypeName) {                     \
+            if (is_type(et->user_types, tk_get_str(ct_get_token(ct))))   \
+                return type_name(ct, et);           \
+        } else {                                    \
+            struct lexer_t lt = find(enum);         \
+            if (lt.in( tk_get_str(ct_get_token(ct))))   \
+                return lt.call(ct, et);            \
+        }                                          \
     } while(0)
 
 
@@ -79,16 +87,24 @@ _parse_header(struct alloc_page* tokenized_file, export_t et)
 {
     struct current_token* ct = ct_begin(tokenized_file);
 
+    struct user_types user_types = {0};
+
+    et->user_types = &user_types;
+
     while (!ct_eof(ct)) {
         generic(ct, et);
     }
 
+
+    export_end(et);
+    
     free(ct);
 }
 
 static bool 
 generic(struct current_token* ct, export_t et)
 {
+
     expect(Preprocessor, ct, et);
 
     expect(TypeSpecifier, ct, et);
@@ -184,7 +200,10 @@ type_def(struct current_token* ct, export_t et)
     //if ( (char*) (ct_get_token(ct)->str)[0] == ']') {
 
     //}
-    export(ET_Type, tk_get_str(ct_get_token(ct)) );
+    char* str = tk_get_str(ct_get_token(ct));
+    if (!str)
+        return false;
+    export(str, et);
     ct_next(ct);
     //do typedef stuff
 
@@ -222,7 +241,7 @@ symbol(struct current_token* ct, export_t et)
     ct_next(ct);
     char* next_tk_str = tk_get_str(ct_get_token(ct));
     if ( is_scope_creator(next_tk_str) ) {
-        export(ET_Function, current);
+        export(current, et);
         ct_advance_past_scope(ct);
         struct current_token* peek = ct;
         next_tk_str = tk_get_str(ct_get_token(peek));
@@ -236,14 +255,14 @@ symbol(struct current_token* ct, export_t et)
     }
 
     else if ( *next_tk_str == '=' ) {
-        export(ET_Variable, current);
+        export(current, et);
         if (!ct_advance_past_semi_colon(ct))
             return false;
 
         return true;
     }
 
-    unsure_export(current);
+    export(current, et);
     
     return true;
 }

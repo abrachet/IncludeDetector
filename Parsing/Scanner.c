@@ -113,8 +113,9 @@ alloc_page_free(struct alloc_page* ap)
     if (!ap)
         return;
 
+    // must cast to void* here because its a bitfield where I used uintptr_t
     for (int i = 0; i < ap->length; i++)
-        free(ap->tokens[i].str);
+        free( (void*) ap->tokens[i].str);
 
     struct alloc_page* next = ap->next;
 

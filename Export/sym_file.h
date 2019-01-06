@@ -71,9 +71,9 @@ struct sym_table {
 // It will almost certainly be padded to 32 bytes but i'm leaving this one to the compiler
 // probably should just make the uint32_t into header_t instead...
 struct header_table {
-    char**   from_file;
+    const char**   from_file;
     uint32_t ff_num;
-    char**   new_headers;
+    const char**   new_headers;
     uint16_t new_num;
     uint16_t max_capacity;
 }; 
@@ -113,7 +113,7 @@ struct sym_table st_create(struct se_list);
 // both the sym_table's array and the linked list are presumed to be already in order
 // they will be if they are only inserted with the proper functions
 // free's the nodes in the linked list
-void merge(struct sym_table*, struct se_list);
+void merge(struct sym_table*, struct se_list*);
 
 // DEPRECATED
 // changed to write_sym_file
@@ -132,7 +132,7 @@ struct header_table load_header_table(mmaped_t* const, struct sym_file_header);
 
 // NOT YET IMPLEMENTED
 // realloc(3)'s the tables new strings to add more headers
-header_t ht_add_header(struct header_table*, char*);
+header_t ht_add_header(struct header_table*, const char*);
 
 // returns the string literal from a header_t in struct symbol_entry
 #define ht_index(ht, index)  index < ht.ff_num ? ht.from_file[index] : ht.new_headers[index - ht.ff_num]
@@ -145,15 +145,14 @@ void ht_free(struct header_table);
 // will get the sizeof the needed memory block to fit every string including the seperating '/0'
 size_t ht_get_size(struct header_table);
 
+#define ht_get_num_headers(ht) (ht.ff_num + ht.new_num)
+
 // used by load_header_table, 
 // it is also potentially useful for loading into the header_table::new_headers
 // so it will be a public function, althought its unclear wether or not it will be used anywhere else at the moment
-char** to_str_arr(char* strings, int num_strings);
+const char** to_str_arr(char* strings, int num_strings);
 
 // serializes sym_file struct and its data structures into a file
 // writing into _sym_file_dir + "/sym_file"
 // must free the sym_file because it unmaps the pages
 bool write_sym_file(struct sym_file*);
-
-// puts the symbols in the list
-void merge(struct sym_table*, struct se_list);

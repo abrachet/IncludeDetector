@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ID.h>
+#include <Export/export.h>
 #include "Tokens.h"
 
 bool is_operator(char* restrict);
@@ -78,10 +79,10 @@ void alloc_page_free(struct alloc_page*);
 #define _NH_GROWTH_RATE 1.2
 #endif
 
-#include "Parser.h"
+//#include "Parser.h"
 
 struct needed_headers nh_new();
-void nh_add_header(struct needed_headers*, char*, char*);
+void nh_add_header(struct needed_headers*, const char*, const char*);
 void print_needed_headers(struct needed_headers*, pthread_mutex_t);
 
 void _parse_header(struct alloc_page*, export_t);

@@ -34,7 +34,7 @@ static struct file_list_pair _ret = {0};
 struct file_list_pair* 
 parse_args(int argc, char** argv)
 {
-    for (int i = 0; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         if ( !strcmp(argv[i], "-recursive") ) {
             recursive_dir_search(argv[++i]);
             break;
@@ -45,6 +45,8 @@ parse_args(int argc, char** argv)
         // if we get here we have exhausted all options, so it must be a file
         add_file(argv[i]);
     }
+
+    return &_ret;
 }
 
 static inline void
@@ -104,6 +106,17 @@ c_prog_text(const char* filename)
     return !strncmp(progname + len + 2, "c program text", 14);
 }
 
+// could be a lot better but this is a quick solution
+static inline char
+get_file_extension(const char* restrict filepath)
+{
+    for (; *filepath; filepath++)
+        if (*filepath == '.')
+            return *(++filepath);
+
+    return 0;
+}
+
 // called when the filepath is known to go to a reachable file
 // 
 static void 
@@ -126,7 +139,7 @@ add_file_exists(const char* restrict filepath)
             else {
                 // no need to lock stdout_mutex because CLA will never be parsed in more than one thread
                 printf("File '%s' is not a valid filetype\n", filepath);
-                DEBUG_LOG("No extension found, treating as probable header");
+                DEBUG_LOG("No extension found, treating as probable header\n");
             }
     }
 }

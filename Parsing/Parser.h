@@ -8,7 +8,6 @@
 
 typedef enum LexFuncs {
     Template = 0, //need to ensure 0 first to index map
-    TypeName,
     TypeSpecifier,
     Attribute,
     TypeDef,
@@ -17,6 +16,8 @@ typedef enum LexFuncs {
     Symbol, //just falls back on symbol
 
     Preprocessor,
+
+    TypeName, // == 7
 } LexFuncs;
 
 
@@ -79,4 +80,4 @@ void parse_header(const char* restrict);
 struct needed_headers parse_source(const char* restrict);
 
 // basic printer for a needed_headers struct
-void needed_headers_print(struct needed_headers* nh, const char* filename)
+void needed_headers_print(struct needed_headers* nh, const char* filename);

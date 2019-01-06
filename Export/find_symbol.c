@@ -31,8 +31,8 @@ extern struct sym_file* sym_file;
 static inline struct symbol_entry* 
 find_symbol(hash_t hashed)
 {
-    size_t left = 0;
-    size_t right = sym_file->symbols.length - 1;
+    ssize_t left = 0;
+    ssize_t right = sym_file->symbols.length - 1;
     struct symbol_entry* arr = sym_file->symbols.arr;
     size_t mid = 0;
 
@@ -51,7 +51,7 @@ find_symbol(hash_t hashed)
     return NULL;
 }
 
-char*
+const char*
 find_header(char* str)
 {
     hash_t hashed = hash(str);

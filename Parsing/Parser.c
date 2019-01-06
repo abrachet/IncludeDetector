@@ -14,6 +14,7 @@
 #include "ParserShared.h"
 
 #include <stdio.h>
+#include <string.h>
 
 // can make a faster way to appened filepath to "cc -E"
 // but its not important right now. Small TODO
@@ -21,17 +22,20 @@ static inline FILE*
 preprocessed_file(const char* restrict filepath)
 {
     char buf[256];
-    (void) snprintf(buf, 256, "cc -E %s", filepath);
+    // turning warnings off because sometimes the preprocessor complains?
+    (void) snprintf(buf, 256, "cc -w -E %s", filepath);
 
     return popen(buf, "r");
 }
 
 // having char** maybe seem weird, but getline
 // takes this, by doing this we can optimize by letting the compiler keep the pointer
-// in its respective register
+// in its respective register. probably getline the compile is not allowed to make
+// the assumption that the register wont be changed because getline is not static
+// but it cant hurt...
 // these loops can be very easily unwound as well
 static inline char*
-find_define( const char** line)
+find_define(char** line)
 {
     // quite the large macro name...
     static char ret[512];
@@ -83,7 +87,7 @@ parse_defines(FILE* file, export_t et)
     char* found;
 
     while ( getline(&line, &size, file) != -1 ) {
-        if ( (found = find_define(line)) )
+        if ( (found = find_define(&line)) )
             export(found, et);
     }
 }

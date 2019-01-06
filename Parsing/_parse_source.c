@@ -2,22 +2,12 @@
 #include "TokenStream.h"
 #include <Export/export.h>
 #include <Export/find_symbol.h>
+#include <Parsing/Parser.h>
 #include <string.h>
 
-struct needed_headers 
-nh_new()
-{
-    struct needed_headers nh;
-
-    nh.headers = malloc( sizeof(*nh.headers) * _NH_INITIAL_SIZE );
-    nh.max_size = _NH_INITIAL_SIZE;
-    nh.length = 0;
-
-    return nh;
-}
 
 #define nh_new() (struct needed_headers) { \
-    .headers  = malloc(sizeof(struct needed_header) * _NH_INITIAL_SIZE ), \
+    .headers  = calloc(1, sizeof(struct needed_header) * _NH_INITIAL_SIZE ), \
     .max_size = _NH_INITIAL_SIZE,          \
     .length   = 0                          \
 }
@@ -33,7 +23,7 @@ nh_new()
 // its outside of the scope of this function however so I have just decided its easier to remove it
 // later
 void 
-nh_add_header(struct needed_headers* nh, char* header, char* symbol)
+nh_add_header(struct needed_headers* nh, const char* header, const char* symbol)
 {
     struct needed_header to_add;
 
@@ -44,15 +34,16 @@ nh_add_header(struct needed_headers* nh, char* header, char* symbol)
         }
 
     if (nh->length == nh->max_size) {
-        size_t old_size = nh->max_size;
+        //size_t old_size = nh->max_size;
         nh->max_size *= _NH_GROWTH_RATE;
         nh->headers = realloc(nh->headers, sizeof(*nh->headers) * nh->max_size);
     }
 
-    nh->headers[nh->length++] = (struct needed_header) { 
+    to_add = nh->headers[nh->length++] = (struct needed_header) { 
         .header = strdup(header), 
         .head = NULL
     };
+
 
 found:
 
@@ -76,18 +67,22 @@ _parse_source(struct alloc_page* tokenized_file)
 
     struct current_token* ct = ct_begin(tokenized_file);
 
-    bool cont = true;
     char* literal_token;
-    char* found_header;
+    const char* found_header;
 
-    while (cont) {
-        literal_token = tk_get_str( ct_get_token(ct) );
+    while (!ct_eof(ct)) {
+        struct token* tk = ct_get_token(ct);
+        if (tk->type == TT_PreprocessorLine)
+            goto end;
+
+        literal_token = tk_get_str( tk );
+
         if (!is_known(literal_token)) {
             if ( (found_header = find_header(literal_token)) )
                 nh_add_header(&headers, found_header, literal_token);
         }
-
-        cont = ct_next(ct);
+end:
+       ct_next(ct);
     }
 
     return headers;

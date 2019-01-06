@@ -44,7 +44,7 @@ ct_free(struct current_token* ct)
 inline bool 
 ct_eof(struct current_token* ct)
 {
-    return (!ct->current_page->next && (ct->current_index == ct->current_page->length - 1));
+    return (!ct->current_page->next && (ct->current_index >= ct->current_page->length - 1));
 }
 
 struct token* 

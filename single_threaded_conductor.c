@@ -6,7 +6,7 @@
 static void
 _headers(struct file_list* files)
 {
-    struct file_lsit* curr;
+    struct file_list* curr = files;
     while(curr) {
         struct file_list* to_free = curr;
         
@@ -16,13 +16,11 @@ _headers(struct file_list* files)
 
         free(to_free);
     }
-
-    export_end();
 }
 
 
 static void
-_sources(struct file_list* files, void (*print_func)(struct needed_headers*))
+_sources(struct file_list* files, void (*print_func)(struct needed_headers*, const char*))
 {
     
     struct file_list* curr = files;

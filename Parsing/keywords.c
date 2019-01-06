@@ -207,7 +207,7 @@ is_known(char* restrict str)
 // user_type vector
 
 void 
-ut_vec_add_type(struct user_types* ut, const char* const restrict type)
+ut_vec_add_type(struct user_types* ut, char* restrict type)
 {
     if (ut->length == ut->max_size) {
         ut->max_size *= _UT_GROWTH_RATE;

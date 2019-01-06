@@ -22,11 +22,11 @@
 #include <errno.h>
 
 #include <pthread/pthread.h>
-
+extern pthread_mutex_t sym_file_mutex;
 
 // this is going to need to change
-#define __FILE_PERMISSIONS__ 0777
 
+#if 0
 static inline void
 get_sym_dir(struct file_path* fp)
 {
@@ -60,6 +60,7 @@ get_sym_dir(struct file_path* fp)
         } 
     }
 }
+#endif
 
 static char* 
 get_sym_file_path()
@@ -160,7 +161,7 @@ read_header(mmaped_t* mmaped_file)
     sfheader_t header = *( (sfheader_t*) mmaped_file );
 
     if ( unlikely(header.hash_assert != hash("IncludeDetector")) ) {
-        DEBUG_LOG("Invalid File");
+        DEBUG_LOG("Invalid symfile");
         return (struct sym_file_header) {0};
     }
 
@@ -172,13 +173,15 @@ load_sym_table(mmaped_t* file, struct sym_file_header header)
 {
     struct sym_table ret;
 
+    printf("Found length was %d\n", header.num_syms);
+
     ret.length = header.num_syms;
     ret.arr = (struct symbol_entry*) (file + sizeof(struct sym_file_header));
 
     return ret;
 }
 
-char** 
+const char** 
 to_str_arr(char* strings, int num_strings) 
 {
     char** ret = (char**) malloc(sizeof(char*) * num_strings );
@@ -193,7 +196,9 @@ to_str_arr(char* strings, int num_strings)
         strings++; //advance once more till the start of the next string
     }
 
-    return ret;
+    
+
+    return (const char**)ret;
 }
 
 struct header_table
@@ -224,12 +229,35 @@ ht_index(struct header_table ht, int index)
 void
 ht_free(struct header_table ht)
 {
-    free(ht.from_file);
+    return;
+    #if 0
     for (int i = 0; i < ht.new_num; i++)
-        free(ht.new_headers[i]);
+        free((void*)ht.new_headers[i]);
 
     free(ht.new_headers);
+    #endif
 }
+
+
+header_t 
+ht_add_header(struct header_table* ht, const char* header)
+{
+    pthread_mutex_lock(&sym_file_mutex);
+    if (ht->max_capacity == ht->new_num) {
+        ht->new_headers = realloc(ht->new_headers, sizeof(char*) * (ht->max_capacity + 6) );
+
+        ht->max_capacity += 6;
+    }
+
+    ht->new_headers[ht->new_num] = header;
+    
+    //return ht->new_num++;
+    ht->new_num++;
+    pthread_mutex_unlock(&sym_file_mutex);
+
+    return ht->new_num;
+}
+
 
 
 // not sure if string.h :: strlen would be inlined, im forcing inlining by hand writting
@@ -260,11 +288,6 @@ ht_get_size(struct header_table ht)
     return size; 
 }
 
-static inline size_t
-ht_get_num_headers(struct header_table ht)
-{
-    return ht.ff_num + ht.new_num;
-}
 
 static inline size_t 
 sf_get_size(struct sym_file* sf)
@@ -475,21 +498,25 @@ se_list_add(struct se_list* this, struct symbol_entry se)
         prev = curr;
     }
 
-    node->next = curr;
-    prev->next = node;
+    if (!prev) {
+        this->head = node;
+    } else {
+        node->next = curr;
+        prev->next = node;
+    }
 }
 
 void 
-merge(struct sym_table* st, struct se_list list)
+merge(struct sym_table* st, struct se_list* list)
 {
-    const size_t max_size = st->length + list.size;
+    const size_t max_size = st->length + list->size;
     struct symbol_entry* arr = 
     (struct symbol_entry*) malloc( sizeof(struct symbol_entry) * max_size );
 
     size_t arr_index = 0;
     size_t st_index = 0;
 
-    struct se_list_node* list_index = list.head;
+    struct se_list_node* list_index = list->head;
 
     while (list_index && st_index < st->length ) {
 

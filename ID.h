@@ -13,8 +13,9 @@
 
 extern struct sym_file* sym_file;
 extern pthread_mutex_t std_out_mutex;
-extern pthread_mutex_t std_err_mutex;
+extern pthread_mutex_t debug_log_mutex;
 
+extern FILE* debug_file;
 
 #define STRINGIZE(x) STRINGIZE2(x)
 #define STRINGIZE2(x) #x
@@ -24,12 +25,12 @@ extern pthread_mutex_t std_err_mutex;
 #ifndef NDEBUG
 #define DEBUG_LOG(...) \
     do {                    \
-        pthread_mutex_lock(&std_err_mutex); \
-        fprintf(stderr, "\033[91m" "[" __FILE__ ":" LINE_STRING "]\033[0m\t", __VA_ARGS__); \
-        pthread_mutex_unlock(&std_err_mutex); \
+        pthread_mutex_lock(&debug_log_mutex); \
+        fprintf(debug_file, "\033[91m" "[" __FILE__ ":" LINE_STRING "]\033[0m\t" __VA_ARGS__); \
+        pthread_mutex_unlock(&debug_log_mutex); \
     } while (0)
 #else
-#define DEBUG_LOG(msg) ((void)0)
+#define DEBUG_LOG(msg, ...) ((void)0)
 #endif
 
 
@@ -38,38 +39,7 @@ extern pthread_mutex_t std_err_mutex;
 
 #define noinline __attribute__ ((noinline))
 
-inline void ID_Runtime_Assert(bool expr)
-{
-    if (!expr) 
-        abort();
-}
-
-
-/*
-struct files {
-    struct ID_file_handler file;
-    //for header files
-    struct {
-        bool export_symbols;
-        bool use_includes; // if includes should be parsed as well, and counted from this file
-    };
-
-    char* path;
-
-    struct files* next;
-};
-
-struct command_line_args {
-    char* tmp_dir;  //not used
-
-    struct debug_logger* opaque_debug_logger; //not yet used
-
-    int num_files;
-    struct files* head;
-};
-
-extern struct command_line_args _gloabl_args;
-*/
+#define __FILE_PERMISSIONS__ 0777
 
 struct file_path {
     char    path[248];
@@ -92,3 +62,8 @@ struct file_path {
 #define fp_reset(fp) (fp)->current_length = 0
 
 #define fp_remove(fp, str) (fp)->current_length -= strlen(str)
+
+const struct file_path* ID_temp_dir(void);
+void init_debugging(void);
+
+void ID_runtime_init(void);

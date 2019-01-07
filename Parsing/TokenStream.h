@@ -8,10 +8,6 @@
 struct current_token {
     struct alloc_page* current_page;    // its called a page because an sizeof(struct alloc_page) == pagesize
     size_t current_index;               // in that page
-
-    #ifndef NDEBUG
-    size_t ct_debug_count;
-    #endif
 };
 
 // returns the token which the current_token iterator is pointing to

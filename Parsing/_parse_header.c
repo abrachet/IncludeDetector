@@ -32,7 +32,6 @@ static bool object_definition(struct current_token*, export_t);
 
 static bool generic(struct current_token*, export_t);
 
-
 #define Lexer_t(in_f, call_f) (struct lexer_t) {.in = in_f, .call = call_f }
 
 static struct lexer_t map[] = {
@@ -139,6 +138,9 @@ attribute(struct current_token* ct, export_t et)
 
     if ( unlikely(!ct_advance_past_scope(ct)) )
         return false; //will return false on ct_eof()
+    
+    if (tk_get_str(ct_get_token(ct))[0] == ';')
+        ct_next(ct);
 
     expect(Attribute, ct, et);
 
@@ -251,7 +253,9 @@ symbol(struct current_token* ct, export_t et)
             if (!ct_advance_past_scope(ct))
                 return false;
         }
-        return true;
+        
+        expect(Attribute, ct, et);
+        return ct_next(ct);
     }
 
     else if ( *next_tk_str == '=' ) {
@@ -263,6 +267,7 @@ symbol(struct current_token* ct, export_t et)
     }
 
     export(current, et);
+
     
     return true;
 }

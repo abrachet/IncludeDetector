@@ -36,7 +36,7 @@ bool object_definition(struct current_token*, export_t);
 typedef bool(*lexer_f)(struct current_token*, export_t);
  
 struct lexer_t {
-    bool(*in)(char*);
+    bool(*in)(const char* restrict);
     lexer_f call;
 };
 

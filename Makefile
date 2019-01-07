@@ -2,7 +2,7 @@ TARGET = ID_test
 WARNING = -Wall -Wshadow --pedantic -Wvla -Werror
 OPTIMIZATIONS = -O0
 LIBRARIES = #-lc -lpthread
-GCC = gcc -g -std=c99 $(OPTIMIZATIONS) $(WARNING) $(LIBRARIES) -I./
+GCC = gcc -g -std=c11 $(OPTIMIZATIONS) $(WARNING) $(LIBRARIES) -I./
 DEFINES = -DDEBUG
 
 SRCS = Parsing/Scanner.c Parsing/keywords.c Parsing/TokenStream.c \

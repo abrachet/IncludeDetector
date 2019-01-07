@@ -16,6 +16,7 @@
 #define SIZEOF_STR_ARR(arr) \
     (sizeof(arr) / sizeof(char*))
 
+//not all operators of course but I put them here anyway
 const char 
 __operators[] = {
     '[', ']', '(', ')', '{', '}',
@@ -26,7 +27,7 @@ __operators[] = {
 };
 
 bool
-is_operator(char* restrict str) 
+is_operator(const char* restrict str) 
 {
     char c = *str;
     for (int i = 0; i < sizeof(__operators); i++)
@@ -74,7 +75,7 @@ __keywords[] = {
 };
 
 bool 
-is_keyword(char* restrict str) 
+is_keyword(const char* restrict str) 
 {
     for (int i = 0; i < SIZEOF_STR_ARR(__keywords); i++)
         if (!strcmp(__keywords[i], str))
@@ -94,11 +95,11 @@ __type_specifiers[] = {
     "struct", "enum", "class", //elaborated types
     "long", "short", "unsigned", "signed",
     "extern", "*", //putting pointer opperator here for expedience
-    "_Nullable", 
+    "_Nullable", "_Atomic", "atomic"
 };
 
 bool 
-is_type_specifier(char* restrict str)
+is_type_specifier(const char* restrict str)
 {
     if (!str)
         return false;
@@ -120,7 +121,7 @@ __standard_types[] = {
 };
 
 bool 
-is_standard_type(char* restrict str)
+is_standard_type(const char* restrict str)
 {
     assert(str);
 
@@ -132,13 +133,13 @@ is_standard_type(char* restrict str)
 }
 
 bool
-is_typedef(char* restrict str)
+is_typedef(const char* restrict str)
 {
     return !strcmp(str, "typedef");
 }
 
 bool
-is_attribute(char* restrict str)
+is_attribute(const char* restrict str)
 {
     //  __asm is not an "attribute" but in headers, at least 
     //  pthreads.h which I am testing with, it is used like this
@@ -148,10 +149,10 @@ is_attribute(char* restrict str)
     return (!strcmp(str, "__attribute__") || !strcmp(str, "__asm"));
 }
 
-bool always_true(char* restrict _) { return true; }
+bool always_true(const char* restrict _) { return true; }
 
 bool
-is_preprocessor(char* restrict str)
+is_preprocessor(const char* restrict str)
 {
     for (; *str && (*str == ' ' || *str == '\t' ); str++ );
 
@@ -159,7 +160,7 @@ is_preprocessor(char* restrict str)
 }
 
 static bool 
-is_int(char* restrict str)
+is_int(const char* restrict str)
 {
     for (; str; str++) {
         char c = *str;
@@ -171,13 +172,13 @@ is_int(char* restrict str)
 }
 
 bool
-is_template(char* restrict str)
+is_template(const char* restrict str)
 {
     return !strcmp(str, "template");
 }
 
 bool
-is_object_def(char* restrict str)
+is_object_def(const char* restrict str)
 {
     if (!strcmp(str, "struct")) return true;
     if (!strcmp(str, "class"))  return true;
@@ -190,7 +191,7 @@ is_object_def(char* restrict str)
 
 
 bool 
-is_known(char* restrict str)
+is_known(const char* restrict str)
 {
     if (!is_operator(str))       return false;
     if (!is_keyword(str))        return false;
@@ -207,11 +208,11 @@ is_known(char* restrict str)
 // user_type vector
 
 void 
-ut_vec_add_type(struct user_types* ut, char* restrict type)
+ut_vec_add_type(struct user_types* ut, const char* restrict type)
 {
     if (ut->length == ut->max_size) {
         ut->max_size *= _UT_GROWTH_RATE;
-        ut->types = (char**) realloc(ut->types, ut->max_size);
+        ut->types = (const char**) realloc(ut->types, ut->max_size);
     }
 
     ut->types[++ut->length] = type;
@@ -228,7 +229,7 @@ ut_vec_find(const struct user_types* const ut, const char* const restrict type)
 }
 
 bool
-is_type(struct user_types* ut, char* restrict str)
+is_type(struct user_types* ut, const char* restrict str)
 {
     if ( is_standard_type(str) )
         return true;

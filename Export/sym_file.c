@@ -255,7 +255,7 @@ ht_add_header(struct header_table* ht, const char* header)
     ht->new_num++;
     pthread_mutex_unlock(&sym_file_mutex);
 
-    return ht->new_num;
+    return ht->new_num - 1;
 }
 
 
@@ -479,8 +479,32 @@ debug_se_list_add(struct se_list* this, struct symbol_entry se)
 }
 
 void
+print_llist()
+{
+
+}
+
+void
+_se_list_add(struct se_list* this, struct symbol_entry se)
+{
+    struct se_list_node* node = (struct se_list_node*) malloc(sizeof(struct se_list_node) );
+    this->size++;
+    node->entry = se;
+
+    const hash_t value = se.hash;
+
+    struct se_list_node** ins = &this->head;
+
+    for (; *ins && (*ins)->entry.hash < value; ins = &(*ins)->next);
+
+    node->next = (*ins)->next;
+    (*ins)->next = node;
+}
+
+void
 se_list_add(struct se_list* this, struct symbol_entry se)
 {
+    #if 0
     struct se_list_node* node = (struct se_list_node*) malloc(sizeof(struct se_list_node) );
     this->size++;
 
@@ -504,6 +528,20 @@ se_list_add(struct se_list* this, struct symbol_entry se)
         node->next = curr;
         prev->next = node;
     }
+    #endif
+
+    struct se_list_node* node = (struct se_list_node*) malloc(sizeof(struct se_list_node) );
+    this->size++;
+    node->entry = se;
+
+    const hash_t value = node->entry.hash;
+
+    struct se_list_node** ins = &this->head;
+
+    for (; *ins && (*ins)->entry.hash < value; ins = &(*ins)->next);
+
+    node->next = *ins;
+    *ins = node;
 }
 
 void 

@@ -16,7 +16,10 @@ pthread_mutex_t debug_log_mutex  = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t std_out_mutex  = PTHREAD_MUTEX_INITIALIZER;
 
 FILE* debug_file;
-// 
+
+#ifndef NDEBUG
+#include <signal.h>
+#endif
 
 int 
 main(int argc, char** argv)

@@ -56,7 +56,7 @@ ct_get_token(struct current_token* ct)
 bool 
 ct_next(struct current_token* ct)
 {
-    if ( unlikely(ct->current_index == _CT_LIST_SIZE - 1) ) {
+    if ( ct->current_index == _CT_LIST_SIZE - 1 ) {
         if (unlikely( !ct->current_page->next) )
             return false;
         
@@ -66,10 +66,6 @@ ct_next(struct current_token* ct)
     }
 
     ct->current_index++;
-
-    #ifndef NDEBUG
-    ct->ct_debug_count++;
-    #endif
 
     return true;    
 }
@@ -82,15 +78,12 @@ ct_prev(struct current_token* ct)
             return false;
 
         ct->current_page = ct->current_page->prev;
-        ct->current_index = _CT_LIST_SIZE;
+        ct->current_index = _CT_LIST_SIZE - 1;
         return true;
     }
 
     ct->current_index--;
 
-    #ifndef NDEBUG
-    ct->ct_debug_count--;
-    #endif
     return true;
 }
 

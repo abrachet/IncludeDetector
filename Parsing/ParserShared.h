@@ -4,19 +4,19 @@
 #include <Export/export.h>
 #include "Tokens.h"
 
-bool is_operator(char* restrict);
-bool is_keyword (char* restrict);
-bool is_type_specifier(char* restrict);
-bool is_standard_type(char* restrict);
-bool is_typedef(char* restrict);
-bool is_attribute(char* restrict);
-bool is_preprocessor(char* restrict);
-bool is_template(char* restrict);
-bool is_object_def(char* restrict);
+bool is_operator(const char* restrict);
+bool is_keyword (const char* restrict);
+bool is_type_specifier(const char* restrict);
+bool is_standard_type(const char* restrict);
+bool is_typedef(const char* restrict);
+bool is_attribute(const char* restrict);
+bool is_preprocessor(const char* restrict);
+bool is_template(const char* restrict);
+bool is_object_def(const char* restrict);
 
-bool is_known(char* restrict);
+bool is_known(const char* restrict);
 
-bool always_true(char* restrict);
+bool always_true(const char* restrict);
 
 ////// User Types Vector ///////
 
@@ -35,14 +35,14 @@ bool always_true(char* restrict);
 struct user_types {
     size_t max_size;
     size_t length;
-    char** types;
+    const char** types;
 };
 
 
 void ut_init_user_types(void);
 void ut_add_type(char*);
 
-bool is_type(struct user_types*, char* restrict);
+bool is_type(struct user_types*, const char* restrict);
 
 #define should_not_be_exported(str) (!is_known(str))
 

@@ -173,7 +173,7 @@ load_sym_table(mmaped_t* file, struct sym_file_header header)
 {
     struct sym_table ret;
 
-    printf("Found length was %d\n", header.num_syms);
+    DEBUG_LOG("Number of symbols is %d\n", header.num_syms);
 
     ret.length = header.num_syms;
     ret.arr = (struct symbol_entry*) (file + sizeof(struct sym_file_header));
@@ -451,85 +451,9 @@ open_sym_file()
     return file;
 }
 
-void 
-debug_se_list_add(struct se_list* this, struct symbol_entry se)
-{
-    struct se_list_node* node = (struct se_list_node*) malloc(sizeof(struct se_list_node) );
-    this->size++;
-
-    node->entry = se;
-    node->next = NULL;
-
-    const hash_t value = node->entry.hash;
-
-    printf("inserting value: %llu\n", value);
-
-    if (!this->head || this->head->entry.hash >= value) {
-        node->next = this->head;
-        this->head = node;
-    } else {
-        struct se_list_node* curr = this->head;
-
-        while(curr->next && curr->next->entry.hash < value )
-            curr = curr->next;
-
-        node->next = curr->next;
-        curr->next = node;
-    }
-}
-
-void
-print_llist()
-{
-
-}
-
-void
-_se_list_add(struct se_list* this, struct symbol_entry se)
-{
-    struct se_list_node* node = (struct se_list_node*) malloc(sizeof(struct se_list_node) );
-    this->size++;
-    node->entry = se;
-
-    const hash_t value = se.hash;
-
-    struct se_list_node** ins = &this->head;
-
-    for (; *ins && (*ins)->entry.hash < value; ins = &(*ins)->next);
-
-    node->next = (*ins)->next;
-    (*ins)->next = node;
-}
-
 void
 se_list_add(struct se_list* this, struct symbol_entry se)
 {
-    #if 0
-    struct se_list_node* node = (struct se_list_node*) malloc(sizeof(struct se_list_node) );
-    this->size++;
-
-    node->entry = se;
-    node->next = NULL;
-
-    const hash_t value = node->entry.hash;
-
-    if (! this->head)
-        this->head = node;
-
-    struct se_list_node* curr = this->head;
-    struct se_list_node* prev = NULL;
-    for (; curr->next && curr->entry.hash < value; curr = curr->next) {
-        prev = curr;
-    }
-
-    if (!prev) {
-        this->head = node;
-    } else {
-        node->next = curr;
-        prev->next = node;
-    }
-    #endif
-
     struct se_list_node* node = (struct se_list_node*) malloc(sizeof(struct se_list_node) );
     this->size++;
     node->entry = se;

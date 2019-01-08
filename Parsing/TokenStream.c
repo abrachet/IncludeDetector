@@ -10,11 +10,6 @@
 
 #include <string.h>
 
-char* 
-tk_get_str(struct token* tk)
-{
-    return (char*)tk->str;
-}
 
 inline struct current_token* 
 ct_begin(struct alloc_page* file)
@@ -41,17 +36,6 @@ ct_free(struct current_token* ct)
     free(ct);
 }
 
-inline bool 
-ct_eof(struct current_token* ct)
-{
-    return (!ct->current_page->next && (ct->current_index >= ct->current_page->length - 1));
-}
-
-struct token* 
-ct_get_token(struct current_token* ct)
-{
-    return ct->current_page->tokens + ct->current_index;
-}
 
 bool 
 ct_next(struct current_token* ct)
@@ -117,7 +101,7 @@ is_scope_ender(char c)
     }
 }
 
-#define ct_get_char(ct) tk_get_str(ct_get_token(ct))[0]
+#define ct_get_char(ct) (tk_get_str(ct_get_token(ct)))[0]
 
 bool 
 ct_advance_past_scope(struct current_token* ct)

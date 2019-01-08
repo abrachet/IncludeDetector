@@ -11,16 +11,20 @@ struct current_token {
 };
 
 // returns the token which the current_token iterator is pointing to
-struct token* ct_get_token(struct current_token*);
+#define ct_get_token(ct) (ct->current_page->tokens + ct->current_index)
 // returns the literal string representation from a token
-char* tk_get_str(struct token*);
+static inline char*
+tk_get_str(struct token* tk)
+{
+    return (char*)tk->str;
+}
 
 // makes the struct current_token go forward or backward
 bool ct_next(struct current_token*);
 bool ct_prev(struct current_token*);
 
 // checks if at the end of the token list
-bool ct_eof(struct current_token*);
+#define ct_eof(ct) (!ct->current_page->next && (ct->current_index >= ct->current_page->length - 1))
 
 //return true if the token is '{', '<', '(' as well as '[' for expedience
 bool is_scope_creator(char*);

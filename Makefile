@@ -1,9 +1,9 @@
-TARGET = ID_test
+TARGET = cpptest
 WARNING = -Wall -Wshadow --pedantic -Wvla -Werror
 OPTIMIZATIONS = -O0
-LIBRARIES = #-lc -lpthread
-GCC = gcc -g -std=c11 $(OPTIMIZATIONS) $(WARNING) $(LIBRARIES) -I./
+GCC = gcc -g -std=c99 $(OPTIMIZATIONS) $(WARNING) -I./
 DEFINES = -DDEBUG
+LDLIBS += -L/Library/Developer/CommandLineTools/usr/lib -lclang -rpath Library/Developer/CommandLineTools/usr/lib
 
 SRCS = Parsing/Scanner.c Parsing/keywords.c Parsing/TokenStream.c \
 	   Export/export.c Export/sym_file.c Export/find_symbol.c Parsing/_parse_source.c \
@@ -18,10 +18,10 @@ OBJS = $(SRCS:%.c=%.o)
 $(TARGET): $(OBJS)
 	$(GCC) $(CXXFLAGS) $(LDFLAGS) $^ $(LDLIBS) -o $(TARGET)
 
-VALGRIND = valgrind --tool=memcheck --verbose --log-file=memcheck.txt ./$(TARGET)
+VALGRIND = valgrind --tool=memcheck --verbose --log-file=memcheck.txt --track-origins=yes --leak-check=full
 
 testmemory: $(TARGET)
-	$(VALGRIND) ./$(TARGET)
+	$(VALGRIND) ./$(TARGET) /usr/include/stdio.h
 
 debug: $(TARGET)
 	lldb ./$(TARGET)

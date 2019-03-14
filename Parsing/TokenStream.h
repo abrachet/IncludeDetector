@@ -19,6 +19,8 @@ tk_get_str(struct token* tk)
     return (char*)tk->str;
 }
 
+#define ct_str(ct) tk_get_str(ct_get_token(ct))
+
 // makes the struct current_token go forward or backward
 bool ct_next(struct current_token*);
 bool ct_prev(struct current_token*);

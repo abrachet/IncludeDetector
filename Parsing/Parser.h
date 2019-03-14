@@ -12,6 +12,8 @@ typedef enum LexFuncs {
     Attribute,
     TypeDef,
     ObjectDefinition,
+
+    Namespace,
     
     Symbol, //just falls back on symbol
 

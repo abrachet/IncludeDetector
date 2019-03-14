@@ -1,273 +1,129 @@
-/**
- * Alex Brachet-Mialot <abrachet@purdue.edu>
- * 
- * Why is it called lexer not parser? Not sure... but i cant be bothered to change file names
- * 
- * This handwritten RDP attempts to extract useful tokens from the file
- * specifically, this file deals with exclusively header files, and when symbols are found calls export
- * 
- * perhaps in the future a more streamlined approach will be taken which can be used on both headers and source files
- * 
- * specifically the distinction between the two is that this doesnt attempt to look anywhere other than global scope
- * and as was already stated, when a symbol is found it is exported. it does not annotate the tokens with their respective type
- * which would be a much more versitile way to solve the problem, but a more difficult one on my end as well.
- */ 
-
-#include "Parser.h"
+#include <ID.h>
 #include <Export/export.h>
-#include <Export/sym_file.h> // for struct se_list
-#include "Scanner.h"
 
-#include <unistd.h>
+#include <clang-c/Index.h>
+
 #include <stdbool.h>
+#include <stdio.h>
+#include <string.h>
 
-static bool preprocessor(struct current_token*, export_t);
-static bool type_name(struct current_token*, export_t);
-static bool type_specifier(struct current_token*, export_t);
-static bool attribute(struct current_token*, export_t);
-static bool type_def(struct current_token*, export_t);
-static bool symbol(struct current_token*, export_t);
-static bool template_(struct current_token*, export_t); //underscode because editor parser was very confused using the symbol "template"
-static bool object_definition(struct current_token*, export_t);
 
-static bool generic(struct current_token*, export_t);
 
-#define Lexer_t(in_f, call_f) (struct lexer_t) {.in = in_f, .call = call_f }
+enum CXChildVisitResult cursorVisitor(CXCursor cursor, CXCursor parent, CXClientData client_data);
+enum CXChildVisitResult 
+static parse_header(CXCursor cursor, CXCursor parent, void* _parser_info);
 
-static struct lexer_t map[] = {
-    Lexer_t(is_template, template_),            //LexFuncs::Template
-    Lexer_t(is_type_specifier, type_specifier), //etc...
-    Lexer_t(is_attribute, attribute),
-    Lexer_t(is_typedef, type_def),
-    Lexer_t(is_object_def, object_definition),
-    Lexer_t(always_true, symbol),
-    Lexer_t(is_preprocessor, preprocessor),
+typedef int user_types_vec;
 
-    // its .in function is different
-    //Lexer_t(is_type, type_name),                //LexFuncs::TypeName
+struct parser_info {
+    export_t et;
+    bool currently_exporting_external;
+    const char* filename;
 };
-
-#define MAP_SIZE (sizeof(map) / sizeof(*map))
-
-static inline struct lexer_t
-find(enum LexFuncs lf)
-{
-    assert((int)lf < MAP_SIZE);
-
-    return map[(int)lf];
-}
-
-
-
-#define expect(enum, ct, et)                        \
-    do {                                            \
-        if (enum == TypeName) {                     \
-            if (is_type(et->user_types, tk_get_str(ct_get_token(ct))))   \
-                return type_name(ct, et);           \
-        } else {                                    \
-            struct lexer_t lt = find(enum);         \
-            if (lt.in( tk_get_str(ct_get_token(ct))))   \
-                return lt.call(ct, et);            \
-        }                                          \
-    } while(0)
-
-
-//lets you use the current_token iterator afterwords without returning
-#define no_return_expect(enum, ct)                  \
-    do {                                            \
-        struct lexer_t lt = find(enum);             \
-        if (lt.in( tk_get_str(ct_get_token(ct))))   \
-            lt.call(ct);                            \
-    } while(0)
 
 
 void
-_parse_header(struct alloc_page* tokenized_file, export_t et)
+_parse_header(const char* filename, export_t et)
 {
-    struct current_token* ct = ct_begin(tokenized_file);
+    printf("Parsing headers\n");
 
-    struct user_types user_types = {0};
+    CXIndex index = clang_createIndex(true, false);
 
-    et->user_types = &user_types;
+    // we are safe to compile as C++ because this is only for headers
+    // still, we use no-deprecated because maybe it will complain if it is a c header
+    // headers are allowed to have the restrict type qualifier however this doesn't exist in cpp
+    // im sure it will complain
+    const char *args[] = {
+        "-x",
+        "c++",
+        "-Wno-deprecated",
+    };
 
-    while (!ct_eof(ct)) {
-        generic(ct, et);
+    CXTranslationUnit parsed = clang_parseTranslationUnit(index, filename, args, 
+                                    (sizeof(args) / 8), NULL, 0, CXTranslationUnit_None);
+
+    CXCursor rootCursor = clang_getTranslationUnitCursor(parsed);
+
+
+    struct parser_info client_data = {
+        .et = et,
+        .currently_exporting_external = false,
+        .filename = filename,
+    };
+
+    (void) clang_visitChildren(rootCursor, &parse_header, &client_data);
+
+    
+
+}
+
+#define clang_get_string(cursor) clang_getCString(clang_getCursorSpelling(cursor))
+
+static enum CXChildVisitResult 
+parse_header(CXCursor cursor, CXCursor parent, void* client_data)
+{
+    struct parser_info* parser_info = (struct parser_info*)client_data;
+
+    CXSourceRange range = clang_getCursorExtent(cursor);
+    CXSourceLocation location = clang_getRangeStart(range);
+    
+    CXFile file;
+    {
+        unsigned line;
+        unsigned column;
+        clang_getFileLocation(location, &file, &line, &column, NULL);
     }
 
+    const char* filename = clang_getCString(clang_getFileName(file));
 
-    export_end(et);
-    
-    free(ct);
-}
-
-static bool 
-generic(struct current_token* ct, export_t et)
-{
-
-    expect(Preprocessor, ct, et);
-
-    expect(TypeSpecifier, ct, et);
-
-    //expect(Template, ct);
-
-    //expect(ObjectDefinition, ct);
-
-    expect(TypeName, ct, et);
-    
-    expect(Attribute, ct, et);
-
-    expect(TypeDef, ct, et);
-
-    expect(Symbol, ct, et);
-
-    return false;
-}
-
-static bool 
-preprocessor(struct current_token* ct, export_t et)
-{
-    //do things later
-    ct_next(ct);
-    return true;
-}
-
-static bool
-attribute(struct current_token* ct, export_t et)
-{
-    ct_next(ct);
-
-    if ( unlikely(!ct_advance_past_scope(ct)) )
-        return false; //will return false on ct_eof()
-    
-    if (tk_get_str(ct_get_token(ct))[0] == ';')
-        ct_next(ct);
-
-    expect(Attribute, ct, et);
-
-    expect(TypeSpecifier, ct, et);
-
-    expect(TypeName, ct, et);
-
-    //expect '='
-
-    expect(Symbol, ct, et);
-
-    return false;
-}
-
-static bool
-type_specifier(struct current_token* ct, export_t et)
-{
-    ct_get_token(ct)->type = TT_TypeSpecifier;
-    ct_next(ct);
-
-    expect(TypeSpecifier, ct, et);
-
-    expect(TypeName, ct, et);
-
-    expect(Attribute, ct, et);
-
-    expect(Symbol, ct, et);
-
-    return false;
-}
-
-static bool
-type_name(struct current_token* ct, export_t et)
-{
-    ct_get_token(ct)->type = TT_Type;
-    ct_next(ct);
-
-    expect(Attribute, ct, et);
-
-    expect(TypeSpecifier, ct, et);
-
-    expect(Symbol, ct, et);
-
-    return false;
-}
-
-static bool
-type_def(struct current_token* ct, export_t et)
-{
-    ct_next(ct);
-
-    //expect(ObjectDefinition)
-
-    while (((char*)ct_get_token(ct)->str)[0] != ';') {
-        ct_next(ct);
+    if (!filename) {
+        DEBUG_LOG("Error getting filename from clang cursor");
+        return CXChildVisit_Break;
     }
 
-    ct_prev(ct);
-    //if ( (char*) (ct_get_token(ct)->str)[0] == ']') {
-
-    //}
-    char* str = tk_get_str(ct_get_token(ct));
-    if (!str)
-        return false;
-    export(str, et);
-    ct_next(ct);
-    //do typedef stuff
-
-    //go till ; if we see () then the first 
-    // pair of () will have the typedef in it
-    //add it to user types. 
-
-    return true; //unless ct_eof();
-}
-
-static bool
-template_(struct current_token* ct, export_t et)
-{
-    return true;
-}
-
-static bool
-object_definition(struct current_token* ct, export_t et)
-{
-    return true;
-}
-
-static bool
-symbol(struct current_token* ct, export_t et)
-{
-    char* current = tk_get_str(ct_get_token(ct));
+    
+    //if (strcmp(parser_info->filename, filename) && !parser_info->currently_exporting_external)
+     //   return CXChildVisit_Continue;
 
     
-    //if next token after symbol is '('
-    //export function
-    //update ct to go to the end of function scope
-    //if next token is = or ;, export variable
-    //
-    //else use unsure_export(); does more checking on the token
-    ct_next(ct);
-    char* next_tk_str = tk_get_str(ct_get_token(ct));
-    if ( is_scope_creator(next_tk_str) ) {
-        export(current, et);
-        ct_advance_past_scope(ct);
-        struct current_token* peek = ct;
-        next_tk_str = tk_get_str(ct_get_token(peek));
-        if (is_scope_creator(next_tk_str)) {
-            if (!ct_next(ct))
-                return false;
-            if (!ct_advance_past_scope(ct))
-                return false;
-        }
+    const char* current_token = NULL;
+
+    switch ( clang_getCursorKind(cursor) ) {
         
-        expect(Attribute, ct, et);
-        return ct_next(ct);
+        
+        case CXCursor_EnumDecl: 
+        case CXCursor_Namespace:
+            return CXChildVisit_Recurse;
+
+        current_token = NULL;
+
+        case CXCursor_FunctionDecl:
+            
+            current_token = clang_get_string(cursor);
+            if (!strcmp("__ID_export_begin", current_token))
+                parser_info->currently_exporting_external++;
+            else if (!strcmp("__ID_export_end", current_token))
+                parser_info->currently_exporting_external--;
+
+
+        case CXCursor_ClassTemplate: case CXCursor_FunctionTemplate:
+        case CXCursor_TypedefDecl:   case CXCursor_TypeRef:
+        case CXCursor_ClassDecl:     case CXCursor_StructDecl:
+        case CXCursor_VarDecl:       case CXCursor_EnumConstantDecl:
+        case CXCursor_CallExpr:      case CXCursor_UnionDecl:    
+        
+
+        printf("Exporting %s\n from source file %s\n", clang_get_string(cursor),
+        filename);
+        export(clang_get_string(cursor), parser_info->et);
+
+        #if 0
+            if (!current_token)
+                export(clang_get_string(cursor), parser_info->et);
+            else 
+                export(current_token, parser_info->et);
+        #endif
+        default:;
     }
-
-    else if ( *next_tk_str == '=' ) {
-        export(current, et);
-        if (!ct_advance_past_semi_colon(ct))
-            return false;
-
-        return true;
-    }
-
-    export(current, et);
-
-    
-    return true;
+    return CXChildVisit_Continue;
 }

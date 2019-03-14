@@ -27,14 +27,21 @@ static struct se_list symbol_list = {0};
 ////////////testing/////////////////
 void export(const char* restrict literal_token, export_t et)
 {
-    if ( unlikely( !literal_token[0] ) )
-        return;
-
     // dont export operators
     // they get here sometimes because of function pointers etc
     if (unlikely( !literal_token[1]) )
         if ( is_operator(literal_token) )
             return;
+
+    if ( unlikely( !literal_token[0] ) )
+        return;
+
+    //printf("Exporting symbol %s\n", literal_token);
+
+    // we will just add all as types including non types ie functions and global variables
+    // this is a hit to performance only marginally moreover, there will never be a function f() and also a type f()
+    // remember, that symbols inside of classes are usually ignored
+    //ut_vec_add_type(et->user_types, literal_token);
 
     hash_t hashed = hash(literal_token);
 
@@ -42,12 +49,15 @@ void export(const char* restrict literal_token, export_t et)
         .hash = hashed, 
         .header_name = et->header,
     });
+
 }
 
 void export_end(export_t et)
 {
+    puts("merging");
     merge(&sym_file->symbols, et->symbol_list);
 
+    se_list_free(et->symbol_list);
     free(et->symbol_list);
     free(et);
 }
@@ -61,14 +71,12 @@ new_export(const char* restrict header_name)
     for (int i = 0; i < sym_file->headers.ff_num; i++)
         if ( !strcmp(sym_file->headers.from_file[i], header_name) ) {
             ret->header = i;
-            puts("first loop");
             goto found_header;
         }
     
     for (int i = 0; i < sym_file->headers.new_num; i++)
         if ( !strcmp(sym_file->headers.new_headers[i], header_name) ) {
             ret->header = (i + sym_file->headers.ff_num);
-            puts("second loop");
             goto found_header;
         }
         
@@ -77,8 +85,6 @@ new_export(const char* restrict header_name)
 found_header:
     // calloc to zero the list for null head and size 0
     ret->symbol_list = (struct se_list*) calloc(1, sizeof(struct se_list));
-
-    printf("Assigning header %s value of %lld\n\n", header_name, ret->header);
     
     return ret;
 }

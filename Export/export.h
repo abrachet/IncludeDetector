@@ -34,7 +34,14 @@ struct _export_t {
     // used by is_type 
     // was a whole order to pass a user_types* otherwise because of how
     // the function map works
+    //
+    // deprecated, this was used before when parsing was done by this program not by clang
+    // this was always a bandaid fix anyway because I couldn't be bothered to change all lexing functions
+    // keeping it however, to not break the build
+    // should be removed later when I have more time
     struct user_types* user_types;
+
+    bool should_export;
 };
 
 typedef struct _export_t* export_t;
@@ -44,6 +51,8 @@ export_t new_export(const char*);
 
 // merges to the symfile
 void export_end(export_t);
+
+#define toggle_export(et) ((et)->should_export = !(et)->should_export)
 
 void export(const char*, export_t);
 

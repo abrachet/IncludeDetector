@@ -101,11 +101,12 @@ is_scope_ender(char c)
     }
 }
 
-#define ct_get_char(ct) (tk_get_str(ct_get_token(ct)))[0]
+#define ct_get_char(ct) (ct_str(ct))[0]
 
 bool 
 ct_advance_past_scope(struct current_token* ct)
 {
+    
     char c = ct_get_char(ct);
 
     if ( !_is_scope_creator(c) ) {

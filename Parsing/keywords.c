@@ -92,22 +92,21 @@ __type_specifiers[] = {
     "inline", "const", "register",
     "restrict", "volatile", "static",
     "thread_local", "_Thread_local",
-    "struct", "enum", "class", //elaborated types
-    "long", "short", "unsigned", "signed",
+    // ended up removing these
+    // "struct", "enum", "class", "union", //elaborated types
+    "long", "short", "unsigned", "signed", "auto"
     "extern", "*", //putting pointer opperator here for expedience
-    "_Nullable", "_Atomic", "atomic"
+    "_Nullable", "_Atomic", "atomic", "constexpr",
 };
 
 bool 
 is_type_specifier(const char* restrict str)
 {
-    if (!str)
-        return false;
-
     for (int i = 0; i < SIZEOF_STR_ARR(__type_specifiers); i++)
         if (!strcmp(__type_specifiers[i], str))
             return true;
 
+    printf("%s is not a TS\n", str);
     return false;
 }
 
@@ -135,7 +134,11 @@ is_standard_type(const char* restrict str)
 bool
 is_typedef(const char* restrict str)
 {
-    return !strcmp(str, "typedef");
+    if (!strcmp(str, "typedef")) return true;
+    // not going to make a different function just for 'using'
+    if (!strcmp(str, "using"))   return true;
+
+    return false;
 }
 
 bool
@@ -157,6 +160,12 @@ is_preprocessor(const char* restrict str)
     for (; *str && (*str == ' ' || *str == '\t' ); str++ );
 
     return (*str == '#');
+}
+
+bool
+is_namespace(const char* restrict str)
+{
+    return !strcmp("namespace", str);
 }
 
 static bool 
@@ -183,10 +192,10 @@ is_object_def(const char* restrict str)
     if (!strcmp(str, "struct")) return true;
     if (!strcmp(str, "class"))  return true;
     if (!strcmp(str, "enum"))   return true;
+    if (!strcmp(str, "union"))  return true;
 
     return false;
 }
-
 
 
 
@@ -207,16 +216,6 @@ is_known(const char* restrict str)
 
 // user_type vector
 
-void 
-ut_vec_add_type(struct user_types* ut, const char* restrict type)
-{
-    if (ut->length == ut->max_size) {
-        ut->max_size *= _UT_GROWTH_RATE;
-        ut->types = (const char**) realloc(ut->types, ut->max_size);
-    }
-
-    ut->types[++ut->length] = type;
-}
 
 bool
 ut_vec_find(const struct user_types* const ut, const char* const restrict type)

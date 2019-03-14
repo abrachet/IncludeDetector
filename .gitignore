@@ -13,8 +13,12 @@ _test.h
 a.out
 current_test
 export_test
+_ID_Test
+include_detector
 
 symfile
+memcheck.txt
+memtest
 
 *.gch
 *.o

@@ -30,7 +30,7 @@ extern FILE* debug_file;
         pthread_mutex_unlock(&debug_log_mutex); \
     } while (0)
 #else
-#define DEBUG_LOG(msg, ...) ((void)0)
+#define DEBUG_LOG(...) ((void)0)
 #endif
 
 

@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <string.h>
 
+/* relic from before using clang
 // can make a faster way to appened filepath to "cc -E"
 // but its not important right now. Small TODO
 static inline FILE*
@@ -27,6 +28,7 @@ preprocessed_file(const char* restrict filepath)
 
     return popen(buf, "r");
 }
+*/
 
 // having char** maybe seem weird, but getline
 // takes this, by doing this we can optimize by letting the compiler keep the pointer
@@ -78,7 +80,8 @@ find_define(char** line)
     return ret;
 }
 
-static void 
+//static 
+void 
 parse_defines(FILE* file, export_t et)
 {
     char*  line  = NULL;
@@ -104,10 +107,11 @@ parse_header(const char* restrict filepath)
 
     export_t et = new_export(filepath);
 
-    parse_defines(before_pp, et);
+    //parse_defines(before_pp, et);
 
     (void) fclose(before_pp);
 
+    /*
     FILE* after_pp = preprocessed_file(filepath);
 
     if (!after_pp) {
@@ -118,10 +122,11 @@ parse_header(const char* restrict filepath)
     struct alloc_page* tokenized_file = scan_file(after_pp);
 
     (void) fclose(after_pp);
+    */
+    _parse_header(filepath, et);
 
-    _parse_header(tokenized_file, et);
-
-    alloc_page_free(tokenized_file);
+    //alloc_page_free(tokenized_file);
+    export_end(et);
 }
 
 struct needed_headers 

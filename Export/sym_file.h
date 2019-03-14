@@ -55,6 +55,7 @@ struct se_list {
 };
 
 void se_list_add(struct se_list*, struct symbol_entry);
+void se_list_free(struct se_list*);
 
 // used to load from sym file and to create a new symbol table from source file
 // ::arr should always be allocated with malloc(3)

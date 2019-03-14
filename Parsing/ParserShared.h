@@ -13,6 +13,7 @@ bool is_attribute(const char* restrict);
 bool is_preprocessor(const char* restrict);
 bool is_template(const char* restrict);
 bool is_object_def(const char* restrict);
+bool is_namespace(const char* restrict);
 
 bool is_known(const char* restrict);
 
@@ -38,9 +39,16 @@ struct user_types {
     const char** types;
 };
 
+static inline void 
+ut_vec_add_type(struct user_types* ut, const char* restrict type)
+{
+    if (ut->length == ut->max_size) {
+        ut->max_size *= _UT_GROWTH_RATE;
+        ut->types = (const char**) realloc(ut->types, ut->max_size);
+    }
 
-void ut_init_user_types(void);
-void ut_add_type(char*);
+    ut->types[ut->length++] = type;
+}
 
 bool is_type(struct user_types*, const char* restrict);
 
@@ -85,6 +93,6 @@ struct needed_headers nh_new();
 void nh_add_header(struct needed_headers*, const char*, const char*);
 void print_needed_headers(struct needed_headers*, pthread_mutex_t);
 
-void _parse_header(struct alloc_page*, export_t);
+void _parse_header(const char*, export_t);
 
 struct needed_headers _parse_source(struct alloc_page* tokenized_file);

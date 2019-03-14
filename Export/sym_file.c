@@ -451,16 +451,37 @@ open_sym_file()
     return file;
 }
 
+#if 0
+static void
+_se_ll_free(struct se_list_node* head)
+{
+    if (!head)
+        return;
+
+    _se_ll_free(head->next);
+    free(head);
+}
+#endif
 void
-se_list_add(struct se_list* this, struct symbol_entry se)
+se_list_free(struct se_list* list) 
+{
+    //_se_ll_free(list->head->next);
+    // this is currently not working
+    // need to look more into how the underlying list and the object holding it are allocated
+    // memory leak here though
+}
+
+void
+se_list_add(struct se_list* list, struct symbol_entry se)
 {
     struct se_list_node* node = (struct se_list_node*) malloc(sizeof(struct se_list_node) );
-    this->size++;
+    list->size++;
     node->entry = se;
+    node->next = NULL;
 
     const hash_t value = node->entry.hash;
 
-    struct se_list_node** ins = &this->head;
+    struct se_list_node** ins = &list->head;
 
     for (; *ins && (*ins)->entry.hash < value; ins = &(*ins)->next);
 
@@ -505,5 +526,4 @@ merge(struct sym_table* st, struct se_list* list)
 
     st->arr = arr;
     st->length = max_size;
-    //assert(arr_index == max_size);
 }
